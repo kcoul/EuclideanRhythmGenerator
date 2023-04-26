@@ -5,13 +5,17 @@
               jucerFormatVersion="1">
   <MAINGROUP id="RcAlgY" name="JavierCano_ProyectoFinal">
     <GROUP id="{370BDBDF-7E1E-96DC-3855-9FDF78FA2BBF}" name="Source">
-      <FILE id="ZPlyIC" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
       <FILE id="GEHScZ" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="ZPlyIC" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="jDR85c" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="Kj2zFh" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="jDR85c" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="lmg2d0" name="EuclideanRhythm.h" compile="0" resource="0"
+            file="Source/EuclideanRhythm.h"/>
+      <FILE id="bNK8VJ" name="EuclideanRhythm.cpp" compile="1" resource="0"
+            file="Source/EuclideanRhythm.cpp"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>

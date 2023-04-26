@@ -10,6 +10,8 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "EuclideanRhythm.h"
+#include <vector>
 
 //==============================================================================
 /**
@@ -28,6 +30,9 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     JavierCano_ProyectoFinalAudioProcessor& audioProcessor;
+
+    const int rowsNumber;
+    EuclideanRhythm euclideanRhythm[rowsNumber];
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavierCano_ProyectoFinalAudioProcessorEditor)
 };
