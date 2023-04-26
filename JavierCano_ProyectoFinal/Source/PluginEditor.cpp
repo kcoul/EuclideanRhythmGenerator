@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <vector>
 
 using namespace std;
 using namespace juce;
@@ -21,9 +22,48 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
     setSize (720, 480);
     setResizable(true, false);
 
-    rowsNumber = 4;
-    for (int i = 0; i < rowsNumber; i++) {
-        euclideanRhythm.emplace_back();
+    for (int i = 0; i < ROWS_NUMBER; i++) {
+        #pragma region lookAndFeel
+        float hue = (float) i / ROWS_NUMBER;
+
+        /**< A colour to use to fill the slider's background. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::backgroundColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The colour to draw the thumb with. It's up to the look
+            and feel class how this is used. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::thumbColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The colour to draw the groove that the thumb moves along. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::trackColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< For rotary sliders, this colour fills the outer curve. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderFillColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< For rotary sliders, this colour is used to draw the outer curve's outline. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderOutlineColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The colour for the text in the text-editor box used for editing the value. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxTextColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The background colour for the text-editor box. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxBackgroundColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The text highlight colour for the text-editor box. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxHighlightColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+
+        /**< The colour to use for a border around the text-editor box. */
+        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxOutlineColourId, 
+            Colour(hue, 1.0f, 1.0f, 1.0f));
+        #pragma endregion
+        
         addAndMakeVisible(euclideanRhythm[i]);
     }
 }
@@ -50,9 +90,10 @@ void JavierCano_ProyectoFinalAudioProcessorEditor::resized()
 
     Rectangle<int> area = getLocalBounds();
     RectangleList<int> rows = RectangleList<int>();
+    int rowHeight = area.getHeight() / ROWS_NUMBER;
 
-    for(int i = 0; i < rowsNumber; i++)
-        rows.add(area.removeFromTop(area.getHeight() / rowsNumber));
+    for(int i = 0; i < ROWS_NUMBER; i++)
+        rows.add(area.removeFromTop(rowHeight));
 
     int i = 0;
     for (auto row : rows)

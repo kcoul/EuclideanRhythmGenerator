@@ -11,7 +11,8 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "EuclideanRhythm.h"
-#include <vector>
+
+#define ROWS_NUMBER 4
 
 //==============================================================================
 /**
@@ -31,8 +32,7 @@ private:
     // access the processor object that created it.
     JavierCano_ProyectoFinalAudioProcessor& audioProcessor;
 
-    const int rowsNumber;
-    EuclideanRhythm euclideanRhythm[rowsNumber];
+    EuclideanRhythm euclideanRhythm[ROWS_NUMBER];
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavierCano_ProyectoFinalAudioProcessorEditor)
 };
