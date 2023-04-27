@@ -19,7 +19,7 @@ enum KnobsIDs {
 //==============================================================================
 /*
 */
-class EuclideanRhythm  : public juce::Component
+class EuclideanRhythm  : public juce::Component, juce::Slider::Listener
 {
 public:
     EuclideanRhythm();
@@ -28,17 +28,11 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    juce::LookAndFeel_V4 lookAndFeel;
-
-    void randomize();
-
-    enum MidiType { ABSOLUTE, RELATIVE, INPUT, RANDOM };
-private:
     juce::ToggleButton enabled;
-
+    juce::TextButton random;
     juce::ToggleButton mute;
     juce::ToggleButton solo;
-    
+
     juce::Slider steps;
     juce::Slider pulse;
     juce::Slider rotate;
@@ -48,8 +42,16 @@ private:
     juce::Slider velocity;
     juce::Slider gate;
     juce::Slider probability;
+    juce::Slider channel;
 
-    juce::ComboBox channel;
+    juce::LookAndFeel_V4 lookAndFeel;
 
+    virtual void sliderValueChanged(juce::Slider* slider);
+
+    void randomize();
+
+    enum MidiType { ABSOLUTE, RELATIVE, INPUT, RANDOM };
+
+private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EuclideanRhythm)
 };
