@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="jyUm51" name="JavierCano_ProyectoFinal" projectType="audioplug"
               useAppConfig="0" addUsingNamespaceToJuceHeader="0" displaySplashScreen="1"
-              jucerFormatVersion="1">
+              jucerFormatVersion="1" pluginCharacteristicsValue="pluginProducesMidiOut,pluginWantsMidiIn">
   <MAINGROUP id="RcAlgY" name="JavierCano_ProyectoFinal">
     <GROUP id="{370BDBDF-7E1E-96DC-3855-9FDF78FA2BBF}" name="Source">
       <FILE id="GEHScZ" name="PluginProcessor.h" compile="0" resource="0"

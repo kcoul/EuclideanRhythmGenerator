@@ -10,10 +10,12 @@
 
 #include <JuceHeader.h>
 
+class JavierCano_ProyectoFinalAudioProcessorEditor;
+
 //==============================================================================
 /**
 */
-class JavierCano_ProyectoFinalAudioProcessor  : public juce::AudioProcessor
+class JavierCano_ProyectoFinalAudioProcessor : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -58,5 +60,7 @@ public:
 
 private:
     //==============================================================================
+    JavierCano_ProyectoFinalAudioProcessorEditor* pluginEditor = nullptr;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavierCano_ProyectoFinalAudioProcessor)
 };

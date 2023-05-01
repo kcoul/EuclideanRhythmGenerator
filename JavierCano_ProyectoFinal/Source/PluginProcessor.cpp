@@ -9,15 +9,17 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+using namespace juce;
+
 //==============================================================================
 JavierCano_ProyectoFinalAudioProcessor::JavierCano_ProyectoFinalAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                       .withInput  ("Input",  AudioChannelSet::stereo(), true)
                       #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+                       .withOutput ("Output", AudioChannelSet::stereo(), true)
                      #endif
                        )
 #endif
@@ -29,7 +31,7 @@ JavierCano_ProyectoFinalAudioProcessor::~JavierCano_ProyectoFinalAudioProcessor(
 }
 
 //==============================================================================
-const juce::String JavierCano_ProyectoFinalAudioProcessor::getName() const
+const String JavierCano_ProyectoFinalAudioProcessor::getName() const
 {
     return JucePlugin_Name;
 }
@@ -81,12 +83,12 @@ void JavierCano_ProyectoFinalAudioProcessor::setCurrentProgram (int index)
 {
 }
 
-const juce::String JavierCano_ProyectoFinalAudioProcessor::getProgramName (int index)
+const String JavierCano_ProyectoFinalAudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void JavierCano_ProyectoFinalAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void JavierCano_ProyectoFinalAudioProcessor::changeProgramName (int index, const String& newName)
 {
 }
 
@@ -129,11 +131,14 @@ bool JavierCano_ProyectoFinalAudioProcessor::isBusesLayoutSupported (const Buses
 }
 #endif
 
-void JavierCano_ProyectoFinalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void JavierCano_ProyectoFinalAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    if (!pluginEditor)
+        return;
+
+    ScopedNoDenormals noDenormals;
+    int totalNumInputChannels  = getTotalNumInputChannels();
+    int totalNumOutputChannels = getTotalNumOutputChannels();
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -141,7 +146,7 @@ void JavierCano_ProyectoFinalAudioProcessor::processBlock (juce::AudioBuffer<flo
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // This is the place where you'd normally do the guts of your plugin's
@@ -152,10 +157,56 @@ void JavierCano_ProyectoFinalAudioProcessor::processBlock (juce::AudioBuffer<flo
     // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        float* channelData = buffer.getWritePointer (channel);
 
         // ..do something to the data...
     }
+
+    //Process MIDI messages
+    for (int i = 0; i < pluginEditor->getRowsNumber(); i++)
+        pluginEditor->euclideanRhythm[i].processMIDI(midiMessages);
+
+    /*IA
+    // Get the values of the UI variables
+    for (int i = 0; i < pluginEditor->getRowsNumber(); i++) {
+        bool enabledValue = pluginEditor->euclideanRhythm[i].enabled.getToggleStateValue().getValue();
+        bool muteValue = pluginEditor->euclideanRhythm[i].mute.getToggleStateValue().getValue();
+        bool soloValue = pluginEditor->euclideanRhythm[i].solo.getToggleStateValue().getValue();
+        float stepsValue = pluginEditor->euclideanRhythm[i].steps.getValue();
+        float pulseValue = pluginEditor->euclideanRhythm[i].pulse.getValue();
+        float rotateValue = pluginEditor->euclideanRhythm[i].rotate.getValue();
+        float speedValue = pluginEditor->euclideanRhythm[i].speed.getValue();
+        float pitchValue = pluginEditor->euclideanRhythm[i].pitch.getValue();
+        int midiTypeValue = pluginEditor->euclideanRhythm[i].midiType.getSelectedId();
+        float velocityValue = pluginEditor->euclideanRhythm[i].velocity.getValue();
+        float gateValue = pluginEditor->euclideanRhythm[i].gate.getValue();
+        float probabilityValue = pluginEditor->euclideanRhythm[i].probability.getValue();
+        int channelValue = pluginEditor->euclideanRhythm[i].channel.getValue();
+        
+    }
+    // Generate the MIDI sequence
+    // Here, we'll use the JUCE MIDI library to generate a sequence of MIDI events
+    MidiBuffer sequence;
+    for (int step = 0; step < stepsValue; ++step)
+    {
+        // Compute the time for this step
+        float time = (pulseValue * step) + (rotateValue * step / stepsValue);
+
+        // Compute the probability for this step
+        float probability = std::pow(speedValue, static_cast<float>(step) - stepsValue);
+
+        // Check if a note should be played at this step
+        if (random.nextFloat() < probabilityValue)
+        {
+            // Generate the note event
+            MidiMessage noteOn = MidiMessage::noteOn(channelValue, pitchValue, velocityValue);
+            MidiMessage noteOff = MidiMessage::noteOff(channelValue, pitchValue, 0.0f);
+
+            // Add the note event to the MIDI sequence
+            sequence.addEvent(noteOn, static_cast<int>(time * getSampleRate()));
+            sequence.addEvent(noteOff, static_cast<int>((time + gateValue) * getSampleRate()));
+        }
+    }*/
 
     /* EJEMPLO ARPEGIADOR
     // A pure MIDI plugin shouldn't be provided any audio data
@@ -205,9 +256,10 @@ bool JavierCano_ProyectoFinalAudioProcessor::hasEditor() const
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* JavierCano_ProyectoFinalAudioProcessor::createEditor()
+AudioProcessorEditor* JavierCano_ProyectoFinalAudioProcessor::createEditor()
 {
-    return new JavierCano_ProyectoFinalAudioProcessorEditor (*this);
+    pluginEditor = new JavierCano_ProyectoFinalAudioProcessorEditor(*this);
+    return pluginEditor;
 }
 
 //==============================================================================
@@ -226,7 +278,7 @@ void JavierCano_ProyectoFinalAudioProcessor::setStateInformation (const void* da
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new JavierCano_ProyectoFinalAudioProcessor();
 }

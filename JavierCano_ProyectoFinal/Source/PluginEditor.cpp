@@ -96,10 +96,13 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
         
         addAndMakeVisible(euclideanRhythm[i]);
     }
+
+    Timer::startTimerHz(60);
 }
 
 JavierCano_ProyectoFinalAudioProcessorEditor::~JavierCano_ProyectoFinalAudioProcessorEditor()
 {
+    Timer::stopTimer();
 }
 
 //==============================================================================
@@ -128,4 +131,11 @@ void JavierCano_ProyectoFinalAudioProcessorEditor::resized()
     int i = 0;
     for (auto row : rows)
         euclideanRhythm[i++].setBounds(row);
+}
+
+void JavierCano_ProyectoFinalAudioProcessorEditor::timerCallback()
+{
+    //Actualizar el ritmo
+    for (int i = 0; i < ROWS_NUMBER; i++)
+        euclideanRhythm[i].calculateRhythm();
 }

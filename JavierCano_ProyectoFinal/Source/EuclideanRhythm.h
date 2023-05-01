@@ -12,14 +12,10 @@
 
 #include <JuceHeader.h>
 
-enum KnobsIDs {
-
-};
-
 //==============================================================================
 /*
 */
-class EuclideanRhythm  : public juce::Component, juce::Slider::Listener
+class EuclideanRhythm : public juce::Component, juce::Slider::Listener
 {
 public:
     EuclideanRhythm();
@@ -33,16 +29,16 @@ public:
     juce::ToggleButton mute;
     juce::ToggleButton solo;
 
-    juce::Slider steps;
-    juce::Slider pulse;
-    juce::Slider rotate;
-    juce::Slider speed;
-    juce::Slider pitch;
+    juce::Slider stepsSlider;
+    juce::Slider pulsesSlider;
+    juce::Slider rotateSlider;
+    juce::Slider speedSlider;
+    juce::Slider pitchSlider;
     juce::ComboBox midiType;
-    juce::Slider velocity;
-    juce::Slider gate;
-    juce::Slider probability;
-    juce::Slider channel;
+    juce::Slider velocitySlider;
+    juce::Slider gateSlider;
+    juce::Slider probabilitySlider;
+    juce::Slider channelSlider;
 
     juce::LookAndFeel_V4 lookAndFeel;
 
@@ -52,6 +48,13 @@ public:
 
     enum MidiType { ABSOLUTE, RELATIVE, INPUT, RANDOM };
 
+    void processMIDI(juce::MidiBuffer& midiMessages);
+
+    void calculateRhythm();
+
 private:
+    std::vector<int> euclidAlgorithm(int steps, int pulses);
+    std::vector<bool> toussaintAlgorithm(int steps, int pulses);
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EuclideanRhythm)
 };
