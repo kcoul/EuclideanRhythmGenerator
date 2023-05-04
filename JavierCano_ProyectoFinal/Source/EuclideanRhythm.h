@@ -24,10 +24,10 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    juce::ToggleButton enabled;
+    juce::ToggleButton enabledButton;
     juce::TextButton random;
-    juce::ToggleButton mute;
-    juce::ToggleButton solo;
+    juce::ToggleButton muteButton;
+    juce::ToggleButton soloButton;
 
     juce::Slider stepsSlider;
     juce::Slider pulsesSlider;
@@ -50,11 +50,29 @@ public:
 
     void processMIDI(juce::MidiBuffer& midiMessages);
 
-    void calculateRhythm();
+    void updateVariables(int beat);
+    bool getBeat(int beat);
 
 private:
-    std::vector<int> euclidAlgorithm(int steps, int pulses);
-    std::vector<bool> toussaintAlgorithm(int steps, int pulses);
+    std::vector<bool> bresenhamAlgorithm(int steps, int pulses);
+
+    std::vector<bool> rhythm;
+
+    int currentBeat, previousBeat;
+
+    bool enabled;
+    bool mute;
+    bool solo;
+    /*float steps;
+    float pulse;
+    float rotate;
+    float speed;
+    float pitch;
+    int midiType;
+    float velocity;
+    float gate;
+    float probability;
+    int channel;*/
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EuclideanRhythm)
 };

@@ -22,10 +22,13 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
     setSize (720, 480);
     setResizable(true, false);
 
-    for (int i = 0; i < ROWS_NUMBER; i++) {
-        if (i == 0) //Activa el primero
-            euclideanRhythm[i].enabled.setToggleState(true, true);
+    //Activa el primero y desactivar el modo relativo
+    euclideanRhythm[0].enabledButton.setToggleState(true, true);
+    euclideanRhythm[0].midiType.setItemEnabled(2, false);
 
+    //Cambiar valores por defecto
+
+    for (int i = 0; i < ROWS_NUMBER; i++) {
         #pragma region setLookAndFeel
         float hue = (float) i / ROWS_NUMBER;
 
@@ -98,6 +101,11 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
     }
 
     Timer::startTimerHz(60);
+
+    beat = 0;
+
+    beatsPerMinute = 120;
+    beatsPerSecond = beatsPerMinute / 60;
 }
 
 JavierCano_ProyectoFinalAudioProcessorEditor::~JavierCano_ProyectoFinalAudioProcessorEditor()
@@ -135,7 +143,11 @@ void JavierCano_ProyectoFinalAudioProcessorEditor::resized()
 
 void JavierCano_ProyectoFinalAudioProcessorEditor::timerCallback()
 {
+    beat += getTimerInterval() * .001f * beatsPerSecond;
+    
     //Actualizar el ritmo
-    for (int i = 0; i < ROWS_NUMBER; i++)
-        euclideanRhythm[i].calculateRhythm();
+    for (int i = 0; i < ROWS_NUMBER; i++) {
+
+        euclideanRhythm[i].updateVariables(floorf(beat));
+    }
 }

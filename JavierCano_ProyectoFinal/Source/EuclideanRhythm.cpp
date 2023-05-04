@@ -8,7 +8,6 @@
   ==============================================================================
 */
 
-#include <JuceHeader.h>
 #include "EuclideanRhythm.h"
 
 using namespace juce;
@@ -20,11 +19,11 @@ EuclideanRhythm::EuclideanRhythm()
 	// In your constructor, you should add any child components, and
 	// initialise any special settings that your component needs.
 
-#pragma region addAndMakeVisible
-	addAndMakeVisible(enabled);
+	#pragma region addAndMakeVisible
+	addAndMakeVisible(enabledButton);
 	addAndMakeVisible(random);
-	addAndMakeVisible(mute);
-	addAndMakeVisible(solo);
+	addAndMakeVisible(muteButton);
+	addAndMakeVisible(soloButton);
 	addAndMakeVisible(stepsSlider);
 	addAndMakeVisible(pulsesSlider);
 	addAndMakeVisible(rotateSlider);
@@ -34,13 +33,13 @@ EuclideanRhythm::EuclideanRhythm()
 	addAndMakeVisible(gateSlider);
 	addAndMakeVisible(probabilitySlider);
 	addAndMakeVisible(channelSlider);
-#pragma endregion
+	#pragma endregion
 
-#pragma region setStyle
-	enabled.setButtonText("Enabled");
+	#pragma region setStyle
+	enabledButton.setButtonText("Enabled");
 	random.setButtonText("Randomize");
-	mute.setButtonText("M");
-	solo.setButtonText("S");
+	muteButton.setButtonText("M");
+	soloButton.setButtonText("S");
 
 	const int textEntryBoxWidth = 100, textEntryBoxHeight = 30;
 
@@ -70,6 +69,7 @@ EuclideanRhythm::EuclideanRhythm()
 	pitchSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
 	pitchSlider.setNumDecimalPlacesToDisplay(0);
 	pitchSlider.setRange(Range<double>(0, 127), 1);
+	pitchSlider.setValue(72, dontSendNotification);
 	pitchSlider.setTextValueSuffix(" pitch");
 
 	midiType.addItem("Absolute", 1);
@@ -82,6 +82,7 @@ EuclideanRhythm::EuclideanRhythm()
 	velocitySlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
 	velocitySlider.setNumDecimalPlacesToDisplay(0);
 	velocitySlider.setRange(Range<double>(0, 127), 1);
+	velocitySlider.setValue(127, dontSendNotification);
 	velocitySlider.setTextValueSuffix(" velocity");
 
 	gateSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
@@ -94,16 +95,19 @@ EuclideanRhythm::EuclideanRhythm()
 	probabilitySlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
 	probabilitySlider.setNumDecimalPlacesToDisplay(2);
 	probabilitySlider.setRange(Range<double>(0, 100), 0);
+	probabilitySlider.setValue(100, dontSendNotification);
 	probabilitySlider.setTextValueSuffix("% probability");
 
 	channelSlider.setSliderStyle(Slider::SliderStyle::IncDecButtons);
 	channelSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
 	channelSlider.setNumDecimalPlacesToDisplay(0);
-	channelSlider.setRange(Range<double>(0, 32), 1);
+	channelSlider.setRange(Range<double>(1, 16), 1);
 	channelSlider.setTextValueSuffix(" channel");
-#pragma endregion
+	#pragma endregion
 
 	setLookAndFeel(&lookAndFeel);
+
+	currentBeat = previousBeat = -1;
 }
 
 EuclideanRhythm::~EuclideanRhythm()
@@ -140,10 +144,10 @@ void EuclideanRhythm::resized()
 	Rectangle<int> toggleArea = area.removeFromLeft(width);
 
 #pragma region setBounds
-	enabled.setBounds(toggleArea.removeFromTop(height));
+	enabledButton.setBounds(toggleArea.removeFromTop(height));
 	random.setBounds(toggleArea.removeFromTop(height));
-	mute.setBounds(toggleArea.removeFromTop(height));
-	solo.setBounds(toggleArea.removeFromTop(height));
+	muteButton.setBounds(toggleArea.removeFromTop(height));
+	soloButton.setBounds(toggleArea.removeFromTop(height));
 	stepsSlider.setBounds(area.removeFromLeft(width));
 	pulsesSlider.setBounds(area.removeFromLeft(width));
 	rotateSlider.setBounds(area.removeFromLeft(width));
@@ -168,91 +172,65 @@ void EuclideanRhythm::randomize()
 
 void EuclideanRhythm::processMIDI(MidiBuffer& midiMessages)
 {
+	//Excepcion aqui en Reaper
+	if (!enabled || mute)
+		return;
+
 	MidiBuffer processedBuffer;
 
 	MidiBuffer::Iterator it(midiMessages);
 	MidiMessage currentMessage;
 	int samplePosition;
 	while (it.getNextEvent(currentMessage, samplePosition)) {
-		DBG("Incoming MIDI: " + currentMessage.getDescription());
-		if (currentMessage.isNoteOnOrOff()) {
+		//DBG("Incoming MIDI: " + currentMessage.getDescription());
+		/*if (currentMessage.isNoteOnOrOff()) {
 			MidiMessage transposedMessage = currentMessage;
 			transposedMessage.setNoteNumber(50);
 			processedBuffer.addEvent(transposedMessage, samplePosition);
+		}*/
+		
+		processedBuffer.addEvent(currentMessage, samplePosition);
+	}
+	
+	if (currentBeat != previousBeat) { 
+		previousBeat = currentBeat;
+
+		if (getBeat(currentBeat % (int) stepsSlider.getValue())) {
+			MidiMessage newMessage = MidiMessage::noteOn((int) channelSlider.getValue(), 
+				(int) pitchSlider.getValue(), (uint8) velocitySlider.getValue());
+			
+			processedBuffer.addEvent(newMessage, ++samplePosition);
 		}
 	}
 
 	midiMessages.swapWith(processedBuffer); //Peligro de que processed buffer se borre?
 }
 
-void EuclideanRhythm::calculateRhythm()
+void EuclideanRhythm::updateVariables(int beat)
 {
-	vector<bool> rhythmBeats = toussaintAlgorithm(stepsSlider.getValue(), pulsesSlider.getValue());
+	rhythm = bresenhamAlgorithm(stepsSlider.getValue(), pulsesSlider.getValue());
 
-#ifdef _DEBUG
-	//Mostrar ritmo por la salida de Visual Studio
-	string rhythm = "";
-	for (bool beat : rhythmBeats) {
-		rhythm.push_back(beat ? 'x' : '.');
-		rhythm.push_back(' ');
-	}
-	DBG("[" + rhythm + "]");
-#endif
+	currentBeat = beat;
+
+	enabled = enabledButton.getToggleStateValue().getValue();
+	mute = muteButton.getToggleStateValue().getValue();
+	solo = soloButton.getToggleStateValue().getValue();
 }
 
-vector<int> EuclideanRhythm::euclidAlgorithm(int steps, int pulses)
+bool EuclideanRhythm::getBeat(int beat)
 {
-	vector<int> euclidSequence;
-	euclidSequence.push_back(pulses);
-
-	while (pulses > 0) {
-		//int q = steps / pulses;
-		int r = steps % pulses;
-
-		if(r != 0)
-			euclidSequence.push_back(r);
-
-		steps = pulses;
-		pulses = r;
-	}
-
-	return euclidSequence;
+	return rhythm[beat];
 }
 
-vector<bool> EuclideanRhythm::toussaintAlgorithm(int steps, int pulses)
+vector<bool> EuclideanRhythm::bresenhamAlgorithm(int steps, int pulses)
 {
-	//Fuente: Toussaint's algorithm (https://en.wikipedia.org/wiki/Euclidean_rhythm#Summary_of_algorithm)
-	int width = steps;
-	int height = 1;
-
-	//Empezamos con una matriz en la que todos los pulsos se dan primero y el resto se queda vacia
-	vector<vector<bool>> beatsDistribution(steps, vector<bool>(steps, false));
-	for (int i = 0; i < pulses; i++)
-		beatsDistribution[0][i] = true;
-
-	//Algoritmo de Euclid para minimizar el apelotonamiento
-	vector<int> euclidSequence = euclidAlgorithm(steps, pulses);
-
-	for (int i = 0; i < euclidSequence.size(); i++) {
-		//Cortamos y bajamos los ultimos tiempos de la matriz hasta que no se puedan bajar mas
-		for (int y = 0; y <= i; y++)
-			for (int x = 0; x < euclidSequence[i]; x++)
-				beatsDistribution[height + y][x] = beatsDistribution[y][width - 1 - x];
-
-		if (i + 1 < euclidSequence.size()) {
-			width -= euclidSequence[i];
-			height = steps / width;
-			if (steps % width != 0)
-				height++;
-		}
+	float slope = (float) pulses / steps; 
+	vector<bool> rhythm;
+	int previous = -1;
+	for (int i = 0; i < steps; i++) {
+		int current = floorf(i * slope);
+		rhythm.push_back(previous != current);
+		previous = current;
 	}
-
-	//Reconstruccion del rimto
-	vector<bool> rhythmBeats;
-	for (int x = 0; x < width; x++)
-		for (int y = 0; y < height; y++)
-			rhythmBeats.push_back(beatsDistribution[y][x]);
-	rhythmBeats.resize(steps);
-
-	return rhythmBeats;
+	return rhythm;
 }

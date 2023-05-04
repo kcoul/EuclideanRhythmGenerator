@@ -41,5 +41,9 @@ private:
     // access the processor object that created it.
     JavierCano_ProyectoFinalAudioProcessor& audioProcessor;
 
+    float beat;
+    float beatsPerMinute;
+    float beatsPerSecond;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavierCano_ProyectoFinalAudioProcessorEditor)
 };
