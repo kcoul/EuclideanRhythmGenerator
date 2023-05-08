@@ -34,7 +34,7 @@ public:
     juce::Slider rotateSlider;
     juce::Slider speedSlider;
     juce::Slider pitchSlider;
-    juce::ComboBox midiType;
+    juce::ComboBox midiTypeBox;
     juce::Slider velocitySlider;
     juce::Slider gateSlider;
     juce::Slider probabilitySlider;
@@ -63,16 +63,16 @@ private:
     bool enabled;
     bool mute;
     bool solo;
-    /*float steps;
+    float steps;
     float pulse;
     float rotate;
     float speed;
     float pitch;
-    int midiType;
-    float velocity;
+    MidiType midiType;
+    juce::uint8 velocity;
     float gate;
     float probability;
-    int channel;*/
+    int channel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EuclideanRhythm)
 };

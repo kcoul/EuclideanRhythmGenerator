@@ -9,13 +9,16 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "EuclideanRhythm.h"
+
+#define ROWS_NUMBER 4
 
 class JavierCano_ProyectoFinalAudioProcessorEditor;
 
 //==============================================================================
 /**
 */
-class JavierCano_ProyectoFinalAudioProcessor : public juce::AudioProcessor
+class JavierCano_ProyectoFinalAudioProcessor : public juce::AudioProcessor, public juce::Timer
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
@@ -58,9 +61,21 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    EuclideanRhythm euclideanRhythm[ROWS_NUMBER];
+
+    inline int getRowsNumber() {
+        return ROWS_NUMBER;
+    }
+
+    void timerCallback() override;
+
 private:
     //==============================================================================
     JavierCano_ProyectoFinalAudioProcessorEditor* pluginEditor = nullptr;
+
+    float beat;
+
+    void getCurrentDAWBeat();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavierCano_ProyectoFinalAudioProcessor)
 };

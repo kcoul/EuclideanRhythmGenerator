@@ -22,95 +22,12 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
     setSize (720, 480);
     setResizable(true, false);
 
-    //Activa el primero y desactivar el modo relativo
-    euclideanRhythm[0].enabledButton.setToggleState(true, true);
-    euclideanRhythm[0].midiType.setItemEnabled(2, false);
-
-    //Cambiar valores por defecto
-
-    for (int i = 0; i < ROWS_NUMBER; i++) {
-        #pragma region setLookAndFeel
-        float hue = (float) i / ROWS_NUMBER;
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::windowBackground, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::widgetBackground, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::menuBackground, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::outline, Colour(hue, .6f, .95f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::defaultText, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::defaultFill, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::highlightedText, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::highlightedFill, Colour(hue, .05f, .2f, 1.0f));
-
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
-            (LookAndFeel_V4::ColourScheme::menuText, Colour(hue, .05f, .2f, 1.0f));
-
-        /**< A colour to use to fill the slider's background. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::backgroundColourId, 
-            Colour(hue, .3f, .04f, 1.0f));
-
-        /**< The colour to draw the thumb with. It's up to the look
-            and feel class how this is used. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::thumbColourId, 
-            Colour(hue, .9f, 1.0f, 1.0f));
-
-        /**< The colour to draw the groove that the thumb moves along. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::trackColourId, 
-            Colour(hue, .3f, .6f, 1.0f));
-
-        /**< For rotary sliders, this colour fills the outer curve. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderFillColourId, 
-            Colour(hue, .3f, .6f, 1.0f));
-
-        /**< For rotary sliders, this colour is used to draw the outer curve's outline. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderOutlineColourId, 
-            Colour(hue, .7f, .1f, 1.0f));
-
-        /**< The colour for the text in the text-editor box used for editing the value. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxTextColourId, 
-            Colour(hue, .0f, .0f, 1.0f));
-
-        /**< The background colour for the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxBackgroundColourId, 
-            Colour(hue, .0f, 1.0f, 1.0f));
-
-        /**< The text highlight colour for the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxHighlightColourId, 
-            Colour(hue, .1f, 1.0f, 1.0f));
-
-        /**< The colour to use for a border around the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxOutlineColourId, 
-            Colour(hue, .7f, .1f, 1.0f));
-        #pragma endregion
-        
-        addAndMakeVisible(euclideanRhythm[i]);
-    }
-
-    Timer::startTimerHz(60);
-
-    beat = 0;
-
-    beatsPerMinute = 120;
-    beatsPerSecond = beatsPerMinute / 60;
+    for (int i = 0; i < ROWS_NUMBER; i++)
+        addAndMakeVisible(audioProcessor.euclideanRhythm[i]);
 }
 
 JavierCano_ProyectoFinalAudioProcessorEditor::~JavierCano_ProyectoFinalAudioProcessorEditor()
 {
-    Timer::stopTimer();
 }
 
 //==============================================================================
@@ -138,16 +55,5 @@ void JavierCano_ProyectoFinalAudioProcessorEditor::resized()
 
     int i = 0;
     for (auto row : rows)
-        euclideanRhythm[i++].setBounds(row);
-}
-
-void JavierCano_ProyectoFinalAudioProcessorEditor::timerCallback()
-{
-    beat += getTimerInterval() * .001f * beatsPerSecond;
-    
-    //Actualizar el ritmo
-    for (int i = 0; i < ROWS_NUMBER; i++) {
-
-        euclideanRhythm[i].updateVariables(floorf(beat));
-    }
+        audioProcessor.euclideanRhythm[i++].setBounds(row);
 }

@@ -28,7 +28,7 @@ EuclideanRhythm::EuclideanRhythm()
 	addAndMakeVisible(pulsesSlider);
 	addAndMakeVisible(rotateSlider);
 	addAndMakeVisible(pitchSlider);
-	addAndMakeVisible(midiType);
+	addAndMakeVisible(midiTypeBox);
 	addAndMakeVisible(velocitySlider);
 	addAndMakeVisible(gateSlider);
 	addAndMakeVisible(probabilitySlider);
@@ -72,11 +72,11 @@ EuclideanRhythm::EuclideanRhythm()
 	pitchSlider.setValue(72, dontSendNotification);
 	pitchSlider.setTextValueSuffix(" pitch");
 
-	midiType.addItem("Absolute", 1);
-	midiType.addItem("Relative", 2);
-	midiType.addItem("Incoming MIDI", 3);
-	midiType.addItem("Random Range", 4);
-	midiType.setSelectedId(1);
+	midiTypeBox.addItem("Absolute", 1);
+	midiTypeBox.addItem("Relative", 2);
+	midiTypeBox.addItem("Incoming MIDI", 3);
+	midiTypeBox.addItem("Random Range", 4);
+	midiTypeBox.setSelectedId(1);
 
 	velocitySlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	velocitySlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
@@ -152,7 +152,7 @@ void EuclideanRhythm::resized()
 	pulsesSlider.setBounds(area.removeFromLeft(width));
 	rotateSlider.setBounds(area.removeFromLeft(width));
 	pitchSlider.setBounds(area.removeFromLeft(width));
-	midiType.setBounds(area.removeFromLeft(width));
+	midiTypeBox.setBounds(area.removeFromLeft(width));
 	velocitySlider.setBounds(area.removeFromLeft(width));
 	gateSlider.setBounds(area.removeFromLeft(width));
 	probabilitySlider.setBounds(area.removeFromLeft(width));
@@ -196,8 +196,7 @@ void EuclideanRhythm::processMIDI(MidiBuffer& midiMessages)
 		previousBeat = currentBeat;
 
 		if (getBeat(currentBeat % (int) stepsSlider.getValue())) {
-			MidiMessage newMessage = MidiMessage::noteOn((int) channelSlider.getValue(), 
-				(int) pitchSlider.getValue(), (uint8) velocitySlider.getValue());
+			MidiMessage newMessage = MidiMessage::noteOn(channel, pitch, velocity);
 			
 			processedBuffer.addEvent(newMessage, ++samplePosition);
 		}
@@ -215,6 +214,17 @@ void EuclideanRhythm::updateVariables(int beat)
 	enabled = enabledButton.getToggleStateValue().getValue();
 	mute = muteButton.getToggleStateValue().getValue();
 	solo = soloButton.getToggleStateValue().getValue();
+
+	steps = stepsSlider.getValue();
+	pulse = pulsesSlider.getValue();
+	rotate = rotateSlider.getValue();
+	speed = speedSlider.getValue();
+	pitch = pitchSlider.getValue();
+	midiType = (MidiType) (midiTypeBox.getSelectedId() - 1);
+	velocity = (uint8) velocitySlider.getValue();
+	gate = gateSlider.getValue();
+	probability = probabilitySlider.getValue();
+	channel = channelSlider.getValue();
 }
 
 bool EuclideanRhythm::getBeat(int beat)
