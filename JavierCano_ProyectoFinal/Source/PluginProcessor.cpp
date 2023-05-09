@@ -11,10 +11,51 @@
 
 using namespace juce;
 
+AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+{
+    AudioProcessorValueTreeState::ParameterLayout parameters;
+
+    for (int i = 0; i < ROWS_NUMBER; i++) {
+        parameters.add(std::make_unique<AudioParameterBool>
+            ("enabled" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Enabled", false));
+        parameters.add(std::make_unique<AudioParameterBool>
+            ("mute" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Mute", false));
+        parameters.add(std::make_unique<AudioParameterBool>
+            ("solo" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Solo", false));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("steps" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Steps", 1, 32, 8));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("pulses" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Pulses", 1, 32, 3));
+        parameters.add(std::make_unique<AudioParameterFloat>
+            ("rotate" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Rotate", 
+                NormalisableRange<float>(0.0f, 360.0f, 0.01f), 0));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("pitch" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Pitch", 0, 127, 60));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("relativePitch" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Relative pitch", -24, 24, 0));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("randomMinPitch" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Random min pitch", 0, 127, 60));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("randomMaxPitch" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Random max pitch", 0, 127, 60));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("midiType" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": MidiType", 1, 4, 1));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("velocity" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Velocity", 0, 127, 127));
+        parameters.add(std::make_unique<AudioParameterFloat>
+            ("probability" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Probability", 
+                NormalisableRange<float>(0.0f, 100.0f, 0.01), 100.0f));
+        parameters.add(std::make_unique<AudioParameterInt>
+            ("channel" + std::to_string(i), "Fila " + std::to_string(i + 1) + ": Channel", 1, 16, 1));
+    }
+
+    return parameters;
+}
+
 //==============================================================================
 JavierCano_ProyectoFinalAudioProcessor::JavierCano_ProyectoFinalAudioProcessor()
+    : parameters(*this, &undoManager, "PARAMETERS", createParameterLayout())
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
+     , AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
                        .withInput  ("Input",  AudioChannelSet::stereo(), true)
@@ -24,81 +65,81 @@ JavierCano_ProyectoFinalAudioProcessor::JavierCano_ProyectoFinalAudioProcessor()
                        )
 #endif
 {
-    //Activa el primero y desactivar el modo relativo
-    euclideanRhythm[0].enabledButton.setToggleState(true, true);
-    euclideanRhythm[0].midiTypeBox.setItemEnabled(2, false);
+    for (int i = 0; i < ROWS_NUMBER; i++)
+        euclideanRhythm.push_back(std::make_unique<EuclideanRhythm>(parameters, i));
 
-    //Cambiar valores por defecto
+    //Desactivar el modo relativo para el primero
+    euclideanRhythm[0]->midiTypeBox.setItemEnabled(2, false);
 
+    #pragma region setLookAndFeel
     for (int i = 0; i < ROWS_NUMBER; i++) {
-        #pragma region setLookAndFeel
         float hue = (float)i / ROWS_NUMBER;
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::windowBackground, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::widgetBackground, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::menuBackground, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::outline, Colour(hue, .6f, .95f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::defaultText, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::defaultFill, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::highlightedText, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::highlightedFill, Colour(hue, .05f, .2f, 1.0f));
 
-        euclideanRhythm[i].lookAndFeel.getCurrentColourScheme().setUIColour
+        euclideanRhythm[i]->lookAndFeel.getCurrentColourScheme().setUIColour
         (LookAndFeel_V4::ColourScheme::menuText, Colour(hue, .05f, .2f, 1.0f));
 
         /**< A colour to use to fill the slider's background. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::backgroundColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::backgroundColourId,
             Colour(hue, .3f, .04f, 1.0f));
 
         /**< The colour to draw the thumb with. It's up to the look
             and feel class how this is used. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::thumbColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::thumbColourId,
             Colour(hue, .9f, 1.0f, 1.0f));
 
         /**< The colour to draw the groove that the thumb moves along. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::trackColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::trackColourId,
             Colour(hue, .3f, .6f, 1.0f));
 
         /**< For rotary sliders, this colour fills the outer curve. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderFillColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::rotarySliderFillColourId,
             Colour(hue, .3f, .6f, 1.0f));
 
         /**< For rotary sliders, this colour is used to draw the outer curve's outline. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
             Colour(hue, .7f, .1f, 1.0f));
 
         /**< The colour for the text in the text-editor box used for editing the value. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxTextColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::textBoxTextColourId,
             Colour(hue, .0f, .0f, 1.0f));
 
         /**< The background colour for the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxBackgroundColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::textBoxBackgroundColourId,
             Colour(hue, .0f, 1.0f, 1.0f));
 
         /**< The text highlight colour for the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxHighlightColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::textBoxHighlightColourId,
             Colour(hue, .1f, 1.0f, 1.0f));
 
         /**< The colour to use for a border around the text-editor box. */
-        euclideanRhythm[i].lookAndFeel.setColour(Slider::textBoxOutlineColourId,
+        euclideanRhythm[i]->lookAndFeel.setColour(Slider::textBoxOutlineColourId,
             Colour(hue, .7f, .1f, 1.0f));
-        #pragma endregion
     }
+    #pragma endregion
 
     Timer::startTimerHz(60);
 
@@ -177,6 +218,20 @@ void JavierCano_ProyectoFinalAudioProcessor::prepareToPlay (double sampleRate, i
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    /*for (int i = 0; i < ROWS_NUMBER; i++) {
+        euclideanRhythm[i]->enabledButton.setToggleState(*parameters.getRawParameterValue("enabled" + std::to_string(i)), false);
+        euclideanRhythm[i]->muteButton.setToggleState(*parameters.getRawParameterValue("mute" + std::to_string(i)), false);
+        euclideanRhythm[i]->soloButton.setToggleState(*parameters.getRawParameterValue("solo" + std::to_string(i)), false);
+        euclideanRhythm[i]->stepsSlider.setValue(*parameters.getRawParameterValue("steps" + std::to_string(i)));
+        euclideanRhythm[i]->pulsesSlider.setValue(*parameters.getRawParameterValue("pulses" + std::to_string(i)));
+        euclideanRhythm[i]->rotateSlider.setValue(*parameters.getRawParameterValue("rotate" + std::to_string(i)));
+        euclideanRhythm[i]->pitchSlider.setValue(*parameters.getRawParameterValue("pitch" + std::to_string(i)));
+        euclideanRhythm[i]->midiTypeBox.setSelectedId(*parameters.getRawParameterValue("midiType" + std::to_string(i)));
+        euclideanRhythm[i]->velocitySlider.setValue(*parameters.getRawParameterValue("velocity" + std::to_string(i)));
+        euclideanRhythm[i]->probabilitySlider.setValue(*parameters.getRawParameterValue("probability" + std::to_string(i)));
+        euclideanRhythm[i]->channelSlider.setValue(*parameters.getRawParameterValue("channel" + std::to_string(i)));
+    }*/
 }
 
 void JavierCano_ProyectoFinalAudioProcessor::releaseResources()
@@ -215,35 +270,11 @@ void JavierCano_ProyectoFinalAudioProcessor::processBlock (AudioBuffer<float>& b
 {
     getCurrentDAWBeat();
 
-    /*ScopedNoDenormals noDenormals;
-    int totalNumInputChannels  = getTotalNumInputChannels();
-    int totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        float* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }*/
-
     //Process MIDI messages
-    for (int i = 0; i < getRowsNumber(); i++)
-        euclideanRhythm[i].processMIDI(midiMessages);
+    MidiBuffer generatedBuffer;
+    for (int i = 0; i < ROWS_NUMBER; i++)
+        euclideanRhythm[i]->processMIDI(midiMessages, generatedBuffer);
+    midiMessages.swapWith(generatedBuffer);
 }
 
 void JavierCano_ProyectoFinalAudioProcessor::getCurrentDAWBeat()
@@ -280,19 +311,29 @@ void JavierCano_ProyectoFinalAudioProcessor::getStateInformation (juce::MemoryBl
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+
+    auto state = parameters.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void JavierCano_ProyectoFinalAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+
+    std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName(parameters.state.getType()))
+            parameters.replaceState(ValueTree::fromXml(*xmlState));
 }
 
 void JavierCano_ProyectoFinalAudioProcessor::timerCallback()
 {
     //Actualizar el ritmo
     for (int i = 0; i < ROWS_NUMBER; i++)
-        euclideanRhythm[i].updateVariables(floorf(beat));
+        euclideanRhythm[i]->updateVariables(beat);
 }
 
 //==============================================================================

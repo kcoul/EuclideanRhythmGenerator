@@ -10,7 +10,6 @@
 #include "PluginEditor.h"
 #include <vector>
 
-using namespace std;
 using namespace juce;
 
 //==============================================================================
@@ -23,7 +22,7 @@ JavierCano_ProyectoFinalAudioProcessorEditor::JavierCano_ProyectoFinalAudioProce
     setResizable(true, false);
 
     for (int i = 0; i < ROWS_NUMBER; i++)
-        addAndMakeVisible(audioProcessor.euclideanRhythm[i]);
+        addAndMakeVisible(*audioProcessor.euclideanRhythm[i]);
 }
 
 JavierCano_ProyectoFinalAudioProcessorEditor::~JavierCano_ProyectoFinalAudioProcessorEditor()
@@ -55,5 +54,5 @@ void JavierCano_ProyectoFinalAudioProcessorEditor::resized()
 
     int i = 0;
     for (auto row : rows)
-        audioProcessor.euclideanRhythm[i++].setBounds(row);
+        audioProcessor.euclideanRhythm[i++]->setBounds(row);
 }

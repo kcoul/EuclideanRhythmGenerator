@@ -11,10 +11,11 @@
 #include "EuclideanRhythm.h"
 
 using namespace juce;
-using namespace std;
+
+int EuclideanRhythm::soloedRhythms = 0;
 
 //==============================================================================
-EuclideanRhythm::EuclideanRhythm()
+EuclideanRhythm::EuclideanRhythm(AudioProcessorValueTreeState& vts, int i) : valueTreeState(vts), id(i)
 {
 	// In your constructor, you should add any child components, and
 	// initialise any special settings that your component needs.
@@ -28,9 +29,11 @@ EuclideanRhythm::EuclideanRhythm()
 	addAndMakeVisible(pulsesSlider);
 	addAndMakeVisible(rotateSlider);
 	addAndMakeVisible(pitchSlider);
+	addAndMakeVisible(relativePitchSlider);
+	addAndMakeVisible(randomMinPitchSlider);
+	addAndMakeVisible(randomMaxPitchSlider);
 	addAndMakeVisible(midiTypeBox);
 	addAndMakeVisible(velocitySlider);
-	addAndMakeVisible(gateSlider);
 	addAndMakeVisible(probabilitySlider);
 	addAndMakeVisible(channelSlider);
 	#pragma endregion
@@ -45,32 +48,41 @@ EuclideanRhythm::EuclideanRhythm()
 
 	stepsSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	stepsSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	stepsSlider.setNumDecimalPlacesToDisplay(0);
 	stepsSlider.setRange(Range<double>(1, 32), 1);
-	stepsSlider.setValue(13, dontSendNotification);
 	stepsSlider.setTextValueSuffix(" steps");
 	stepsSlider.addListener(this);
 
 	pulsesSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	pulsesSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	pulsesSlider.setNumDecimalPlacesToDisplay(0);
 	pulsesSlider.setRange(Range<double>(1, 32), 1);
-	pulsesSlider.setValue(5, dontSendNotification);
 	pulsesSlider.setTextValueSuffix(" pulses");
 	pulsesSlider.addListener(this);
 
 	rotateSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	rotateSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	rotateSlider.setNumDecimalPlacesToDisplay(0);
 	rotateSlider.setRange(Range<double>(0, 360), 0);
 	rotateSlider.setTextValueSuffix("d rotated");
 
 	pitchSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	pitchSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	pitchSlider.setNumDecimalPlacesToDisplay(0);
 	pitchSlider.setRange(Range<double>(0, 127), 1);
-	pitchSlider.setValue(72, dontSendNotification);
 	pitchSlider.setTextValueSuffix(" pitch");
+
+	relativePitchSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
+	relativePitchSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
+	relativePitchSlider.setRange(Range<double>(-24, 24), 1);
+	relativePitchSlider.setTextValueSuffix(" pitch");
+
+	randomMinPitchSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
+	randomMinPitchSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
+	randomMinPitchSlider.setRange(Range<double>(0, 127), 1);
+	randomMinPitchSlider.setTextValueSuffix(" min pitch");
+	randomMinPitchSlider.addListener(this);
+	randomMaxPitchSlider.setSliderStyle(Slider::SliderStyle::LinearVertical);
+	randomMaxPitchSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
+	randomMaxPitchSlider.setRange(Range<double>(0, 127), 1);
+	randomMaxPitchSlider.setTextValueSuffix(" max pitch");
+	randomMaxPitchSlider.addListener(this);
 
 	midiTypeBox.addItem("Absolute", 1);
 	midiTypeBox.addItem("Relative", 2);
@@ -80,29 +92,41 @@ EuclideanRhythm::EuclideanRhythm()
 
 	velocitySlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	velocitySlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	velocitySlider.setNumDecimalPlacesToDisplay(0);
 	velocitySlider.setRange(Range<double>(0, 127), 1);
-	velocitySlider.setValue(127, dontSendNotification);
 	velocitySlider.setTextValueSuffix(" velocity");
-
-	gateSlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-	gateSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	gateSlider.setNumDecimalPlacesToDisplay(0);
-	gateSlider.setRange(Range<double>(0, 127), 1);
-	gateSlider.setTextValueSuffix(" gate");
 
 	probabilitySlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
 	probabilitySlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	probabilitySlider.setNumDecimalPlacesToDisplay(2);
 	probabilitySlider.setRange(Range<double>(0, 100), 0);
-	probabilitySlider.setValue(100, dontSendNotification);
 	probabilitySlider.setTextValueSuffix("% probability");
 
 	channelSlider.setSliderStyle(Slider::SliderStyle::IncDecButtons);
 	channelSlider.setTextBoxStyle(Slider::TextBoxBelow, false, textEntryBoxWidth, textEntryBoxHeight);
-	channelSlider.setNumDecimalPlacesToDisplay(0);
 	channelSlider.setRange(Range<double>(1, 16), 1);
 	channelSlider.setTextValueSuffix(" channel");
+	#pragma endregion
+
+	#pragma region attachments
+	enabledAttachment.reset(new ButtonAttachment(valueTreeState, "enabled" + std::to_string(id), enabledButton));
+	random.onClick = [this]() { randomize(); };
+	muteAttachment.reset(new ButtonAttachment(valueTreeState, "mute" + std::to_string(id), muteButton));
+	soloAttachment.reset(new ButtonAttachment(valueTreeState, "solo" + std::to_string(id), soloButton));
+
+	stepsAttachment.reset(new SliderAttachment(valueTreeState, "steps" + std::to_string(id), stepsSlider));
+	pulsesAttachment.reset(new SliderAttachment(valueTreeState, "pulses" + std::to_string(id), pulsesSlider));
+	rotateAttachment.reset(new SliderAttachment(valueTreeState, "rotate" + std::to_string(id), rotateSlider));
+	pitchAttachment.reset(new SliderAttachment(valueTreeState, "pitch" + std::to_string(id), pitchSlider));
+	relativePitchAttachment.reset(new SliderAttachment(valueTreeState, "relativePitch" + std::to_string(id),
+		relativePitchSlider));
+	randomMinPitchAttachment.reset(new SliderAttachment(valueTreeState, "randomMinPitch" + std::to_string(id),
+		randomMinPitchSlider));
+	randomMaxPitchAttachment.reset(new SliderAttachment(valueTreeState, "randomMaxPitch" + std::to_string(id),
+		randomMaxPitchSlider));
+	midiTypeAttachment.reset(new ComboBoxAttachment(valueTreeState, "midiType" + std::to_string(id), midiTypeBox));
+	velocityAttachment.reset(new SliderAttachment(valueTreeState, "velocity" + std::to_string(id), velocitySlider));
+	probabilityAttachment.reset(new SliderAttachment(valueTreeState, "probability" + std::to_string(id),
+		probabilitySlider));
+	channelAttachment.reset(new SliderAttachment(valueTreeState, "channel" + std::to_string(id), channelSlider));
 	#pragma endregion
 
 	setLookAndFeel(&lookAndFeel);
@@ -139,11 +163,11 @@ void EuclideanRhythm::resized()
 	// components that your component contains..
 
 	Rectangle<int> area = getLocalBounds();
-	int width = area.getWidth() / 10;
+	int width = area.getWidth() /  9;
 	int height = area.getHeight() / 4;
 	Rectangle<int> toggleArea = area.removeFromLeft(width);
 
-#pragma region setBounds
+	#pragma region setBounds
 	enabledButton.setBounds(toggleArea.removeFromTop(height));
 	random.setBounds(toggleArea.removeFromTop(height));
 	muteButton.setBounds(toggleArea.removeFromTop(height));
@@ -151,80 +175,138 @@ void EuclideanRhythm::resized()
 	stepsSlider.setBounds(area.removeFromLeft(width));
 	pulsesSlider.setBounds(area.removeFromLeft(width));
 	rotateSlider.setBounds(area.removeFromLeft(width));
-	pitchSlider.setBounds(area.removeFromLeft(width));
+	Rectangle<int> pitchArea = area.removeFromLeft(width);
+	pitchSlider.setBounds(pitchArea);
+	relativePitchSlider.setBounds(pitchArea);
+	randomMinPitchSlider.setBounds(pitchArea.removeFromLeft(width / 2));
+	randomMaxPitchSlider.setBounds(pitchArea.removeFromLeft(width / 2));
 	midiTypeBox.setBounds(area.removeFromLeft(width));
 	velocitySlider.setBounds(area.removeFromLeft(width));
-	gateSlider.setBounds(area.removeFromLeft(width));
 	probabilitySlider.setBounds(area.removeFromLeft(width));
 	channelSlider.setBounds(area.removeFromLeft(width));
-#pragma endregion
+	#pragma endregion
 }
 
 void EuclideanRhythm::sliderValueChanged(Slider* slider)
 {
 	if ((slider == &stepsSlider || slider == &pulsesSlider) && stepsSlider.getValue() < pulsesSlider.getValue())
 		pulsesSlider.setValue(stepsSlider.getValue());
+
+	else if (slider == &randomMaxPitchSlider && randomMaxPitchSlider.getValue() < randomMinPitchSlider.getValue())
+		randomMinPitchSlider.setValue(randomMaxPitchSlider.getValue());
+
+	else if (slider == &randomMinPitchSlider && randomMaxPitchSlider.getValue() < randomMinPitchSlider.getValue())
+		randomMaxPitchSlider.setValue(randomMinPitchSlider.getValue());
 }
 
 void EuclideanRhythm::randomize()
 {
+	int randomSteps = randomGenerator.nextInt(32) + 1;
+	stepsSlider.setValue(randomSteps, dontSendNotification);
+	pulsesSlider.setValue(randomGenerator.nextInt(randomSteps) + 1, dontSendNotification);
+	pitchSlider.setValue(randomGenerator.nextInt(128), dontSendNotification);
+	velocitySlider.setValue(randomGenerator.nextInt(128), dontSendNotification);
 }
 
-void EuclideanRhythm::processMIDI(MidiBuffer& midiMessages)
+void EuclideanRhythm::processMIDI(MidiBuffer& incomingMidiMessages, MidiBuffer& generatedBuffer)
 {
-	//Excepcion aqui en Reaper
-	if (!enabled || mute)
+	if (!enabled || soloedRhythms > 0 && !solo || mute)
 		return;
 
-	MidiBuffer processedBuffer;
-
-	MidiBuffer::Iterator it(midiMessages);
+	MidiBuffer::Iterator it(incomingMidiMessages);
 	MidiMessage currentMessage;
 	int samplePosition;
 	while (it.getNextEvent(currentMessage, samplePosition)) {
-		//DBG("Incoming MIDI: " + currentMessage.getDescription());
 		/*if (currentMessage.isNoteOnOrOff()) {
 			MidiMessage transposedMessage = currentMessage;
 			transposedMessage.setNoteNumber(50);
 			processedBuffer.addEvent(transposedMessage, samplePosition);
 		}*/
-		
-		processedBuffer.addEvent(currentMessage, samplePosition);
 	}
 	
 	if (currentBeat != previousBeat) { 
 		previousBeat = currentBeat;
 
-		if (getBeat(currentBeat % (int) stepsSlider.getValue())) {
-			MidiMessage newMessage = MidiMessage::noteOn(channel, pitch, velocity);
+		if (randomGenerator.nextFloat() * 100 < probability && getBeat(currentBeat % (int) stepsSlider.getValue())) {
+			int newPitch = pitch;
+
+			switch (midiType) {
+			case RELATIVE:
+				newPitch = referencePitch + relativePitch;
+				break;
+			case INPUT:
+				break;
+			case RANDOM:
+				newPitch = randomGenerator.nextInt(randomMaxPitch - randomMinPitch + 1) + randomMinPitch;
+				DBG(newPitch);
+				break;
+			}
+
+			MidiMessage newMessage = MidiMessage::noteOn(channel, newPitch, velocity);
 			
-			processedBuffer.addEvent(newMessage, ++samplePosition);
+			generatedBuffer.addEvent(newMessage, ++samplePosition);
 		}
 	}
-
-	midiMessages.swapWith(processedBuffer); //Peligro de que processed buffer se borre?
 }
 
-void EuclideanRhythm::updateVariables(int beat)
+void EuclideanRhythm::updateVariables(float beat)
 {
+	#pragma region getValue
 	rhythm = bresenhamAlgorithm(stepsSlider.getValue(), pulsesSlider.getValue());
-
-	currentBeat = beat;
 
 	enabled = enabledButton.getToggleStateValue().getValue();
 	mute = muteButton.getToggleStateValue().getValue();
-	solo = soloButton.getToggleStateValue().getValue();
+	if (!solo) {
+		if(solo = soloButton.getToggleStateValue().getValue())
+			soloedRhythms++;
+	}
+	else {
+		if (!(solo = soloButton.getToggleStateValue().getValue()))
+			soloedRhythms--;
+	}
 
 	steps = stepsSlider.getValue();
-	pulse = pulsesSlider.getValue();
+	pulses = pulsesSlider.getValue();
 	rotate = rotateSlider.getValue();
-	speed = speedSlider.getValue();
 	pitch = pitchSlider.getValue();
+	relativePitch = relativePitchSlider.getValue();
+	randomMinPitch = randomMinPitchSlider.getValue();
+	randomMaxPitch = randomMaxPitchSlider.getValue();
 	midiType = (MidiType) (midiTypeBox.getSelectedId() - 1);
 	velocity = (uint8) velocitySlider.getValue();
-	gate = gateSlider.getValue();
 	probability = probabilitySlider.getValue();
 	channel = channelSlider.getValue();
+
+	if (midiType == RELATIVE)
+		getReferencePitch();
+	#pragma endregion
+
+	#pragma region setVisible
+	pitchSlider.setVisible(false);
+	relativePitchSlider.setVisible(false);
+	randomMinPitchSlider.setVisible(false);
+	randomMaxPitchSlider.setVisible(false);
+	velocitySlider.setVisible(false);
+	switch (midiType) {
+	default:
+		pitchSlider.setVisible(true);
+		velocitySlider.setVisible(true);
+		break;
+	case RELATIVE:
+		relativePitchSlider.setVisible(true);
+		velocitySlider.setVisible(true);
+		break;
+	case INPUT:
+		break;
+	case RANDOM:
+		randomMinPitchSlider.setVisible(true);
+		randomMaxPitchSlider.setVisible(true);
+		velocitySlider.setVisible(true);
+		break;
+	}
+	#pragma endregion
+
+	currentBeat = floorf(beat + rotate / 360 * steps);
 }
 
 bool EuclideanRhythm::getBeat(int beat)
@@ -232,10 +314,10 @@ bool EuclideanRhythm::getBeat(int beat)
 	return rhythm[beat];
 }
 
-vector<bool> EuclideanRhythm::bresenhamAlgorithm(int steps, int pulses)
+std::vector<bool> EuclideanRhythm::bresenhamAlgorithm(int steps, int pulses)
 {
 	float slope = (float) pulses / steps; 
-	vector<bool> rhythm;
+	std::vector<bool> rhythm;
 	int previous = -1;
 	for (int i = 0; i < steps; i++) {
 		int current = floorf(i * slope);
@@ -243,4 +325,14 @@ vector<bool> EuclideanRhythm::bresenhamAlgorithm(int steps, int pulses)
 		previous = current;
 	}
 	return rhythm;
+}
+
+void EuclideanRhythm::getReferencePitch()
+{
+	int i = id - 1;
+
+	while (i > 0 && (int) valueTreeState.getParameterAsValue("midiType" + std::to_string(i)).getValue() - 1 != ABSOLUTE)
+		i--;
+
+	referencePitch = (int) valueTreeState.getParameterAsValue("pitch" + std::to_string(i)).getValue();
 }

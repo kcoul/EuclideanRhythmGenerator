@@ -11,7 +11,7 @@
 #include <JuceHeader.h>
 #include "EuclideanRhythm.h"
 
-#define ROWS_NUMBER 4
+#define ROWS_NUMBER 8
 
 class JavierCano_ProyectoFinalAudioProcessorEditor;
 
@@ -61,11 +61,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    EuclideanRhythm euclideanRhythm[ROWS_NUMBER];
-
-    inline int getRowsNumber() {
-        return ROWS_NUMBER;
-    }
+    std::vector<std::unique_ptr<EuclideanRhythm>> euclideanRhythm;
 
     void timerCallback() override;
 
@@ -74,6 +70,9 @@ private:
     JavierCano_ProyectoFinalAudioProcessorEditor* pluginEditor = nullptr;
 
     float beat;
+
+    juce::AudioProcessorValueTreeState parameters;
+    juce::UndoManager undoManager;
 
     void getCurrentDAWBeat();
 

@@ -12,13 +12,17 @@
 
 #include <JuceHeader.h>
 
+typedef juce::AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
+typedef juce::AudioProcessorValueTreeState::ButtonAttachment ButtonAttachment;
+typedef juce::AudioProcessorValueTreeState::ComboBoxAttachment ComboBoxAttachment;
+
 //==============================================================================
 /*
 */
 class EuclideanRhythm : public juce::Component, juce::Slider::Listener
 {
 public:
-    EuclideanRhythm();
+    EuclideanRhythm(juce::AudioProcessorValueTreeState& vts, int i);
     ~EuclideanRhythm() override;
 
     void paint (juce::Graphics&) override;
@@ -32,15 +36,18 @@ public:
     juce::Slider stepsSlider;
     juce::Slider pulsesSlider;
     juce::Slider rotateSlider;
-    juce::Slider speedSlider;
     juce::Slider pitchSlider;
+    juce::Slider relativePitchSlider;
+    juce::Slider randomMinPitchSlider;
+    juce::Slider randomMaxPitchSlider;
     juce::ComboBox midiTypeBox;
     juce::Slider velocitySlider;
-    juce::Slider gateSlider;
     juce::Slider probabilitySlider;
     juce::Slider channelSlider;
 
     juce::LookAndFeel_V4 lookAndFeel;
+
+    juce::Random randomGenerator;
 
     virtual void sliderValueChanged(juce::Slider* slider);
 
@@ -48,13 +55,13 @@ public:
 
     enum MidiType { ABSOLUTE, RELATIVE, INPUT, RANDOM };
 
-    void processMIDI(juce::MidiBuffer& midiMessages);
+    void processMIDI(juce::MidiBuffer& incomingMidiMessages, juce::MidiBuffer& generatedBuffer);
 
-    void updateVariables(int beat);
+    void updateVariables(float beat);
     bool getBeat(int beat);
 
 private:
-    std::vector<bool> bresenhamAlgorithm(int steps, int pulses);
+    int id;
 
     std::vector<bool> rhythm;
 
@@ -63,16 +70,42 @@ private:
     bool enabled;
     bool mute;
     bool solo;
-    float steps;
-    float pulse;
+    static int soloedRhythms;
+
+    int steps;
+    int pulses;
     float rotate;
-    float speed;
-    float pitch;
+    int pitch;
+    int referencePitch;
+    int relativePitch;
+    int randomMinPitch;
+    int randomMaxPitch;
     MidiType midiType;
     juce::uint8 velocity;
-    float gate;
     float probability;
     int channel;
+
+    std::unique_ptr<ButtonAttachment> enabledAttachment;
+    std::unique_ptr<ButtonAttachment> muteAttachment;
+    std::unique_ptr<ButtonAttachment> soloAttachment;
+    
+    std::unique_ptr<SliderAttachment> stepsAttachment;
+    std::unique_ptr<SliderAttachment> pulsesAttachment;
+    std::unique_ptr<SliderAttachment> rotateAttachment;
+    std::unique_ptr<SliderAttachment> pitchAttachment;
+    std::unique_ptr<SliderAttachment> relativePitchAttachment;
+    std::unique_ptr<SliderAttachment> randomMinPitchAttachment;
+    std::unique_ptr<SliderAttachment> randomMaxPitchAttachment;
+    std::unique_ptr<ComboBoxAttachment> midiTypeAttachment;
+    std::unique_ptr<SliderAttachment> velocityAttachment;
+    std::unique_ptr<SliderAttachment> probabilityAttachment;
+    std::unique_ptr<SliderAttachment> channelAttachment;
+
+    juce::AudioProcessorValueTreeState& valueTreeState;
+
+    std::vector<bool> bresenhamAlgorithm(int steps, int pulses);
+
+    void getReferencePitch();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EuclideanRhythm)
 };
