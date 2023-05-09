@@ -53,7 +53,7 @@ public:
 
     void randomize();
 
-    enum MidiType { ABSOLUTE, RELATIVE, INPUT, RANDOM };
+    enum MidiType { ABSOLUTE, RELATIVE, RANDOM };
 
     void processMIDI(juce::MidiBuffer& incomingMidiMessages, juce::MidiBuffer& generatedBuffer);
 

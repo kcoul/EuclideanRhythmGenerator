@@ -86,8 +86,7 @@ EuclideanRhythm::EuclideanRhythm(AudioProcessorValueTreeState& vts, int i) : val
 
 	midiTypeBox.addItem("Absolute", 1);
 	midiTypeBox.addItem("Relative", 2);
-	midiTypeBox.addItem("Incoming MIDI", 3);
-	midiTypeBox.addItem("Random Range", 4);
+	midiTypeBox.addItem("Random Range", 3);
 	midiTypeBox.setSelectedId(1);
 
 	velocitySlider.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
@@ -132,6 +131,9 @@ EuclideanRhythm::EuclideanRhythm(AudioProcessorValueTreeState& vts, int i) : val
 	setLookAndFeel(&lookAndFeel);
 
 	currentBeat = previousBeat = -1;
+
+	//Para asegurarnos que el contador de solos no falle
+	solo = false;
 }
 
 EuclideanRhythm::~EuclideanRhythm()
@@ -213,17 +215,6 @@ void EuclideanRhythm::processMIDI(MidiBuffer& incomingMidiMessages, MidiBuffer& 
 	if (!enabled || soloedRhythms > 0 && !solo || mute)
 		return;
 
-	MidiBuffer::Iterator it(incomingMidiMessages);
-	MidiMessage currentMessage;
-	int samplePosition;
-	while (it.getNextEvent(currentMessage, samplePosition)) {
-		/*if (currentMessage.isNoteOnOrOff()) {
-			MidiMessage transposedMessage = currentMessage;
-			transposedMessage.setNoteNumber(50);
-			processedBuffer.addEvent(transposedMessage, samplePosition);
-		}*/
-	}
-	
 	if (currentBeat != previousBeat) { 
 		previousBeat = currentBeat;
 
@@ -234,17 +225,14 @@ void EuclideanRhythm::processMIDI(MidiBuffer& incomingMidiMessages, MidiBuffer& 
 			case RELATIVE:
 				newPitch = referencePitch + relativePitch;
 				break;
-			case INPUT:
-				break;
 			case RANDOM:
 				newPitch = randomGenerator.nextInt(randomMaxPitch - randomMinPitch + 1) + randomMinPitch;
-				DBG(newPitch);
 				break;
 			}
 
 			MidiMessage newMessage = MidiMessage::noteOn(channel, newPitch, velocity);
 			
-			generatedBuffer.addEvent(newMessage, ++samplePosition);
+			generatedBuffer.addEvent(newMessage, 0);
 		}
 	}
 }
@@ -286,22 +274,17 @@ void EuclideanRhythm::updateVariables(float beat)
 	relativePitchSlider.setVisible(false);
 	randomMinPitchSlider.setVisible(false);
 	randomMaxPitchSlider.setVisible(false);
-	velocitySlider.setVisible(false);
+
 	switch (midiType) {
 	default:
 		pitchSlider.setVisible(true);
-		velocitySlider.setVisible(true);
 		break;
 	case RELATIVE:
 		relativePitchSlider.setVisible(true);
-		velocitySlider.setVisible(true);
-		break;
-	case INPUT:
 		break;
 	case RANDOM:
 		randomMinPitchSlider.setVisible(true);
 		randomMaxPitchSlider.setVisible(true);
-		velocitySlider.setVisible(true);
 		break;
 	}
 	#pragma endregion

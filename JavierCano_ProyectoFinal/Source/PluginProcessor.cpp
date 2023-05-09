@@ -218,20 +218,6 @@ void JavierCano_ProyectoFinalAudioProcessor::prepareToPlay (double sampleRate, i
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-
-    /*for (int i = 0; i < ROWS_NUMBER; i++) {
-        euclideanRhythm[i]->enabledButton.setToggleState(*parameters.getRawParameterValue("enabled" + std::to_string(i)), false);
-        euclideanRhythm[i]->muteButton.setToggleState(*parameters.getRawParameterValue("mute" + std::to_string(i)), false);
-        euclideanRhythm[i]->soloButton.setToggleState(*parameters.getRawParameterValue("solo" + std::to_string(i)), false);
-        euclideanRhythm[i]->stepsSlider.setValue(*parameters.getRawParameterValue("steps" + std::to_string(i)));
-        euclideanRhythm[i]->pulsesSlider.setValue(*parameters.getRawParameterValue("pulses" + std::to_string(i)));
-        euclideanRhythm[i]->rotateSlider.setValue(*parameters.getRawParameterValue("rotate" + std::to_string(i)));
-        euclideanRhythm[i]->pitchSlider.setValue(*parameters.getRawParameterValue("pitch" + std::to_string(i)));
-        euclideanRhythm[i]->midiTypeBox.setSelectedId(*parameters.getRawParameterValue("midiType" + std::to_string(i)));
-        euclideanRhythm[i]->velocitySlider.setValue(*parameters.getRawParameterValue("velocity" + std::to_string(i)));
-        euclideanRhythm[i]->probabilitySlider.setValue(*parameters.getRawParameterValue("probability" + std::to_string(i)));
-        euclideanRhythm[i]->channelSlider.setValue(*parameters.getRawParameterValue("channel" + std::to_string(i)));
-    }*/
 }
 
 void JavierCano_ProyectoFinalAudioProcessor::releaseResources()

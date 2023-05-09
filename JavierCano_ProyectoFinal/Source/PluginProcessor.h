@@ -11,7 +11,7 @@
 #include <JuceHeader.h>
 #include "EuclideanRhythm.h"
 
-#define ROWS_NUMBER 8
+#define ROWS_NUMBER 4
 
 class JavierCano_ProyectoFinalAudioProcessorEditor;
 
