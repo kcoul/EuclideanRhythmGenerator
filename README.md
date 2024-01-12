@@ -1,2 +1,1 @@
-# IM
-Practicas para la asignatura Informática Musical en el grado de Desarrollo de Videojuegos de la UCM
+https://sites.google.com/view/javier-cano/other-projects/euclidean-rhythm-generator
