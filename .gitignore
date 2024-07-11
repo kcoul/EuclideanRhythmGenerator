@@ -2,4 +2,5 @@
 .vscode/
 **/.vs/
 **/x64/
-JavierCano_ProyectoFinal/JuceLibraryCode/
+JuceLibraryCode
+Builds
